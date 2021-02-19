@@ -16,6 +16,12 @@ def lazy_reduce(function, iterable, initializer=_initial_missing):
     else:
         yield reduce(function, iterable, initializer)
 
+def flat_map(function, iterable):
+    results = map(function, iterable)
+    for map_iterable in results:
+        for i in map_iterable:
+            yield i
+
 def items_of_single(x):
     for i in next(x).items():
         yield i
@@ -36,9 +42,11 @@ class MapReduceTask:
                 result = function(i[0], i[1])
 
                 if self.verbose:
-                    print('{}: {} -> {}'.format(function.__name__, i, result))
+                    result = list(result)  # need to materialize, can't run iterable twice
+                    for j in result:
+                        print('{}: {} -> {}'.format(function.__name__, i, j))
                 return result
-            result = map(map_func, x)
+            result = flat_map(map_func, x)
 
             if self.lazy:
                 return result
@@ -64,9 +72,11 @@ class MapReduceTask:
                 result = function(i[0], i[1])
 
                 if self.verbose:
-                    print('{}: {} -> {}'.format(function.__name__, i, result))
+                    result = list(result)  # need to materialize, can't run iterable twice
+                    for j in result:
+                        print('{}: {} -> {}'.format(function.__name__, i, j))
                 return result
-            result = map(map_func, x)
+            result = flat_map(map_func, x)
             if self.lazy:
                 return result
             else:

@@ -31,15 +31,15 @@ t = MapReduceTask(verbose=True, lazy=False)
 # the order matters
 @t.map
 def m1(k, v):
-    return v, 1
+    yield v, 1
 
 @t.reduce
 def r1(k, v):
-    return k, sum(v)
+    yield k, sum(v)
 
 @t.map
 def m2(k, v):
-    return 'all', (k, v)
+    yield 'all', (k, v)
 
 @t.reduce
 def r2(k, v):
@@ -47,7 +47,7 @@ def r2(k, v):
     for ki, vi in v:
         if vm is None or vi > vm:
             km, vm = ki, vi
-    return 'max', (km, vm)
+    yield 'max', (km, vm)
 
 x = [1,2,3,1,2,1,4,5,6]
 print(list(t(x)))
@@ -78,4 +78,37 @@ m2: (5, 1) -> ('all', (5, 1))
 m2: (6, 1) -> ('all', (6, 1))
 r2: ('all', [(1, 3), (2, 2), (3, 1), (4, 1), (5, 1), (6, 1)]) -> ('max', (1, 3))
 [('max', (1, 3))]
+```
+
+Word count task
+```python
+t = MapReduceTask(verbose=True, lazy=False)
+
+@t.map
+def m1(k, v):
+    for word in v.split(' '):
+        yield word, 1
+
+@t.reduce
+def r1(k, v):
+    yield k, sum(v)
+
+x = ["hello world word world of words"]
+print(list(t(x)))
+```
+
+The output is the following
+```
+m1: (0, 'hello world word world of words') -> ('hello', 1)
+m1: (0, 'hello world word world of words') -> ('world', 1)
+m1: (0, 'hello world word world of words') -> ('word', 1)
+m1: (0, 'hello world word world of words') -> ('world', 1)
+m1: (0, 'hello world word world of words') -> ('of', 1)
+m1: (0, 'hello world word world of words') -> ('words', 1)
+r1: ('hello', [1]) -> ('hello', 1)
+r1: ('world', [1, 1]) -> ('world', 2)
+r1: ('word', [1]) -> ('word', 1)
+r1: ('of', [1]) -> ('of', 1)
+r1: ('words', [1]) -> ('words', 1)
+[('hello', 1), ('world', 2), ('word', 1), ('of', 1), ('words', 1)]
 ```
