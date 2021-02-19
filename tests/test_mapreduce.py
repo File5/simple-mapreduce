@@ -161,15 +161,14 @@ def test_repeated_inf_break():
         def m2_break(k, v):
             yield 'all', (k, v)
 
-        @repeated.break_reduce
+        @repeated.reduce
         def break_reduce(k, v):
             for n, l in v:
                 if l[0] == 1:
-                    return False
-            return True
+                    break
+            else:
+                repeated.stop()
 
-        @repeated.map
-        def m3_back(k, v):
             for ki, vi in v:
                 yield ki, vi
 
@@ -268,15 +267,14 @@ def test_repeated_inf_break_lazy():
         def m2_break(k, v):
             yield 'all', (k, v)
 
-        @repeated.break_reduce
+        @repeated.reduce
         def break_reduce(k, v):
             for n, l in v:
                 if l[0] == 1:
-                    return False
-            return True
+                    break
+            else:
+                repeated.stop()
 
-        @repeated.map
-        def m3_back(k, v):
             for ki, vi in v:
                 yield ki, vi
 

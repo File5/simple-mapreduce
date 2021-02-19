@@ -99,31 +99,9 @@ class Repeated(MapReduceSteps):
     def __exit__(self, exc_type, exc_value, traceback):
         return False
 
-    def break_map(self, function):
-        if not callable(function):
-            # it's decorator with () call
-            return self.break_map
 
-        def break_if(k, v):
-            if function(k, v):
-                raise StopRepeated
-            yield k, v
-        break_if.__name__ = function.__name__
-        self.map(break_if)
-        return function
-
-    def break_reduce(self, function):
-        if not callable(function):
-            # it's decorator with () call
-            return self.break_reduce
-
-        def break_if(k, v):
-            if function(k, v):
-                raise StopRepeated
-            yield k, v
-        break_if.__name__ = function.__name__
-        self.reduce(break_if)
-        return function
+    def stop(self):
+        raise StopRepeated
 
     def eval(self, x):
         try:
