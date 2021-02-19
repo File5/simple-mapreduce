@@ -90,3 +90,213 @@ def test_readme_example_lazy():
         assert False, "should not be evaluated"
     else:
         assert True
+
+
+def test_repeated_n_times():
+    t = MapReduceTask(verbose=True, lazy=False)
+
+    @t.map
+    def m1(k, v):
+        nonlocal start_node
+        n, neighbors = v
+        state = 1 if n == start_node else 0
+        yield n, (state, neighbors)
+
+    with t.repeated(3) as repeated:
+        @repeated.reduce
+        def r1(n, l):
+            state = 0
+            neighbors = []
+            for i in l:
+                state = max(state, i[0])  # i.state
+                neighbors += i[1]  # i.neighbors
+            if state == 1:
+                for o in neighbors:
+                    yield o, (1, [])
+                state = 2
+            yield n, (state, neighbors)
+
+    start_node = 'x'
+    x = {
+        'x': ['a', 'b', 'c'],
+        'a': ['e'],
+        'b': ['d'],
+        'c': ['d', 'x'],
+    }
+    assert list(t(x.items())) == [
+        ('e', (2, [])),
+        ('a', (2, ['e'])),
+        ('d', (2, [])),
+        ('b', (2, ['d'])),
+        ('x', (2, ['a', 'b', 'c'])),
+        ('c', (2, ['d', 'x']))
+    ]
+
+
+def test_repeated_inf_break():
+    t = MapReduceTask(verbose=True, lazy=False)
+
+    @t.map
+    def m1(k, v):
+        nonlocal start_node
+        n, neighbors = v
+        state = 1 if n == start_node else 0
+        yield n, (state, neighbors)
+
+    with t.repeated() as repeated:
+        @repeated.reduce
+        def r1(n, l):
+            state = 0
+            neighbors = []
+            for i in l:
+                state = max(state, i[0])  # i.state
+                neighbors += i[1]  # i.neighbors
+            if state == 1:
+                for o in neighbors:
+                    yield o, (1, [])
+                state = 2
+            yield n, (state, neighbors)
+
+        @repeated.map
+        def m2_break(k, v):
+            yield 'all', (k, v)
+
+        @repeated.break_reduce
+        def break_reduce(k, v):
+            for n, l in v:
+                if l[0] == 1:
+                    return False
+            return True
+
+        @repeated.map
+        def m3_back(k, v):
+            for ki, vi in v:
+                yield ki, vi
+
+    @t.reduce
+    def r2_back(k, v):
+        for ki, vi in v:
+            yield ki, vi
+
+    start_node = 'x'
+    x = {
+        'x': ['a', 'b', 'c'],
+        'a': ['e'],
+        'b': ['d'],
+        'c': ['d', 'x'],
+    }
+    # print newline, so the output will be on the new line when run by pytest
+    print('')
+    assert list(t(x.items())) == [
+        ('e', (2, [])),
+        ('a', (2, ['e'])),
+        ('d', (2, [])),
+        ('b', (2, ['d'])),
+        ('x', (2, ['a', 'b', 'c'])),
+        ('c', (2, ['d', 'x']))
+    ]
+
+
+def test_repeated_n_times_lazy():
+    t = MapReduceTask(verbose=True, lazy=True)
+
+    @t.map
+    def m1(k, v):
+        x = 1 / 0  # will raise ZeroDivisionError if evaluated
+        nonlocal start_node
+        n, neighbors = v
+        state = 1 if n == start_node else 0
+        yield n, (state, neighbors)
+
+    with t.repeated(3) as repeated:
+        @repeated.reduce
+        def r1(n, l):
+            state = 0
+            neighbors = []
+            for i in l:
+                state = max(state, i[0])  # i.state
+                neighbors += i[1]  # i.neighbors
+            if state == 1:
+                for o in neighbors:
+                    yield o, (1, [])
+                state = 2
+            yield n, (state, neighbors)
+
+    start_node = 'x'
+    x = {
+        'x': ['a', 'b', 'c'],
+        'a': ['e'],
+        'b': ['d'],
+        'c': ['d', 'x'],
+    }
+    # print newline, so the output will be on the new line when run by pytest
+    print('')
+    try:
+        t(x)
+    except ZeroDivisionError:
+        assert False, "should not be evaluated"
+    else:
+        assert True
+
+
+def test_repeated_inf_break_lazy():
+    t = MapReduceTask(verbose=True, lazy=True)
+
+    @t.map
+    def m1(k, v):
+        x = 1 / 0  # will raise ZeroDivisionError if evaluated
+        nonlocal start_node
+        n, neighbors = v
+        state = 1 if n == start_node else 0
+        yield n, (state, neighbors)
+
+    with t.repeated() as repeated:
+        @repeated.reduce
+        def r1(n, l):
+            state = 0
+            neighbors = []
+            for i in l:
+                state = max(state, i[0])  # i.state
+                neighbors += i[1]  # i.neighbors
+            if state == 1:
+                for o in neighbors:
+                    yield o, (1, [])
+                state = 2
+            yield n, (state, neighbors)
+
+        @repeated.map
+        def m2_break(k, v):
+            yield 'all', (k, v)
+
+        @repeated.break_reduce
+        def break_reduce(k, v):
+            for n, l in v:
+                if l[0] == 1:
+                    return False
+            return True
+
+        @repeated.map
+        def m3_back(k, v):
+            for ki, vi in v:
+                yield ki, vi
+
+    @t.reduce
+    def r2_back(k, v):
+        for ki, vi in v:
+            yield ki, vi
+
+    start_node = 'x'
+    x = {
+        'x': ['a', 'b', 'c'],
+        'a': ['e'],
+        'b': ['d'],
+        'c': ['d', 'x'],
+    }
+    # print newline, so the output will be on the new line when run by pytest
+    print('')
+    try:
+        t(x)
+    except ZeroDivisionError:
+        assert False, "should not be evaluated"
+    else:
+        assert True
