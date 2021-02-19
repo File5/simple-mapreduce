@@ -12,6 +12,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/File5/simple-mapreduce",
+    license="MIT",
     packages=['mapreduce'],
     classifiers=[
         "Programming Language :: Python :: 3",

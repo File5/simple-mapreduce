@@ -8,7 +8,7 @@ It is not intended for production usage.
 
 ## Installation
 
-You can copy single file mapreduce/mapreduce.py into your project, there are no dependencies.
+You can copy single file `mapreduce/mapreduce.py` into your project, there are no dependencies.
 
 Or, alternatively:
 ```

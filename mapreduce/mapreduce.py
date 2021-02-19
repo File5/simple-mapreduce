@@ -1,3 +1,7 @@
+# MIT License
+# Copyright (c) 2021 Aleksandr Zuev
+# See LICENSE for further information
+
 from collections import defaultdict
 from functools import reduce
 import itertools
