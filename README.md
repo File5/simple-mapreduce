@@ -8,7 +8,16 @@ It is not intended for production usage.
 
 ## Installation
 
-You can copy single file into your project, there are no dependencies.
+You can copy single file mapreduce/mapreduce.py into your project, there are no dependencies.
+
+Or, alternatively:
+```
+pip install -e git+https://github.com/File5/simple-mapreduce#egg=simple-mapreduce
+```
+then, to uninstall:
+```
+pip uninstall simple-mapreduce
+```
 
 ## Usage
 
