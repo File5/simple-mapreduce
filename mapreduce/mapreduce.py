@@ -139,7 +139,8 @@ class Repeated(MapReduceSteps):
         except StopRepeated:
             if self.verbose:
                 print('-' * 10, 'break'.format(i), '-' * 10)
-        return x
+        for i in x:
+            yield i
 
     def __call__(self, *args, **kwargs):
         return self.eval(*args, **kwargs)
