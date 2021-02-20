@@ -89,8 +89,8 @@ class StopRepeated(Exception):
     pass
 
 class Repeated(MapReduceSteps):
-    def __init__(self, times=-1):
-        super().__init__()
+    def __init__(self, times=-1, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.remaining = times
 
     def __enter__(self):
@@ -116,7 +116,7 @@ class Repeated(MapReduceSteps):
                 i += 1
         except StopRepeated:
             if self.verbose:
-                print('-' * 10, 'break'.format(i), '-' * 10)
+                print('-' * 10, 'break', '-' * 10)
         for i in x:
             yield i
 
@@ -128,7 +128,7 @@ class MapReduceTask(MapReduceSteps):
         super().__init__(verbose, lazy)
 
     def repeated(self, times=-1):
-        r = Repeated(times)
+        r = Repeated(times, verbose=self.verbose, lazy=self.lazy)
         self.steps.append(r)
         return r
 
