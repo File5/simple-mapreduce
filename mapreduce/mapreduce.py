@@ -88,6 +88,22 @@ class MapReduceSteps:
 class StopRepeated(Exception):
     pass
 
+class Discarded(MapReduceSteps):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        return False
+
+    def eval(self, x):
+        initial_x = list(x)
+        for func in self.steps:
+            x = func(x)
+        return initial_x
+
+    def __call__(self, *args, **kwargs):
+        return self.eval(*args, **kwargs)
+
 class Repeated(MapReduceSteps):
     def __init__(self, times=-1, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -99,6 +115,10 @@ class Repeated(MapReduceSteps):
     def __exit__(self, exc_type, exc_value, traceback):
         return False
 
+    def discarded(self, verbose=True):
+        d = Discarded(verbose=verbose, lazy=self.lazy)
+        self.steps.append(d)
+        return d
 
     def stop(self):
         raise StopRepeated

@@ -298,3 +298,120 @@ def test_repeated_inf_break_lazy():
         assert False, "should not be evaluated"
     else:
         assert True
+
+
+def test_repeated_inf_break_discarded():
+    t = MapReduceTask(verbose=True, lazy=False)
+
+    @t.map
+    def m1(k, v):
+        nonlocal start_node
+        n, neighbors = v
+        state = 1 if n == start_node else 0
+        yield n, (state, neighbors)
+
+    with t.repeated() as repeated:
+        @repeated.reduce
+        def r1(n, l):
+            state = 0
+            neighbors = []
+            for i in l:
+                state = max(state, i[0])  # i.state
+                neighbors += i[1]  # i.neighbors
+            if state == 1:
+                for o in neighbors:
+                    yield o, (1, [])
+                state = 2
+            yield n, (state, neighbors)
+
+        with repeated.discarded(verbose=True) as discarded:
+            @discarded.map
+            def m2_break(k, v):
+                yield 'all', (k, v)
+
+            @discarded.reduce
+            def break_reduce(k, v):
+                for n, l in v:
+                    if l[0] == 1:
+                        break
+                else:
+                    repeated.stop()
+                # should have yield statement for the function to be generator
+                if False: yield 1
+                yield None, None
+
+    start_node = 'x'
+    x = {
+        'x': ['a', 'b', 'c'],
+        'a': ['e'],
+        'b': ['d'],
+        'c': ['d', 'x'],
+    }
+    # print newline, so the output will be on the new line when run by pytest
+    print('')
+    assert list(t(x.items())) == [
+        ('e', (2, [])),
+        ('a', (2, ['e'])),
+        ('d', (2, [])),
+        ('b', (2, ['d'])),
+        ('x', (2, ['a', 'b', 'c'])),
+        ('c', (2, ['d', 'x']))
+    ]
+
+
+def test_repeated_inf_break_discarded_lazy():
+    t = MapReduceTask(verbose=True, lazy=True)
+
+    @t.map
+    def m1(k, v):
+        x = 1 / 0  # will raise ZeroDivisionError if evaluated
+        nonlocal start_node
+        n, neighbors = v
+        state = 1 if n == start_node else 0
+        yield n, (state, neighbors)
+
+    with t.repeated() as repeated:
+        @repeated.reduce
+        def r1(n, l):
+            state = 0
+            neighbors = []
+            for i in l:
+                state = max(state, i[0])  # i.state
+                neighbors += i[1]  # i.neighbors
+            if state == 1:
+                for o in neighbors:
+                    yield o, (1, [])
+                state = 2
+            yield n, (state, neighbors)
+
+        with repeated.discarded(verbose=True) as discarded:
+            @discarded.map
+            def m2_break(k, v):
+                yield 'all', (k, v)
+
+            @discarded.reduce
+            def break_reduce(k, v):
+                for n, l in v:
+                    if l[0] == 1:
+                        break
+                else:
+                    repeated.stop()
+                # should have yield statement for the function to be generator
+                if False: yield 1
+                # yield None, None  # can yield anything since changes will be discarded
+
+    start_node = 'x'
+    x = {
+        'x': ['a', 'b', 'c'],
+        'a': ['e'],
+        'b': ['d'],
+        'c': ['d', 'x'],
+    }
+    # print newline, so the output will be on the new line when run by pytest
+    print('')
+    try:
+        t(x)
+    except ZeroDivisionError:
+        assert False, "should not be evaluated"
+    else:
+        assert True
